@@ -2,13 +2,14 @@ library(shiny)
 library(ggplot2)
 library(usmap)
 library(usdata)
+library(DT)
 
 years <- c(1990:2019)
 allStates <- sort(c(state.name, "Washington DC", "Total US"))
 allStatesAbb <- sort(c(state.abb, "DC", "US-TOTAL"))
 allStatesAbb3 <- sort(c(state.name = state.abb, "Washington DC" = "DC", "Total US" = "US-TOTAL"))
 energySources <- sort(c("Coal", "Geothermal", "Hydro", "Natural Gas",
-                        "Nuclear", "Petroleum", "Solar", "Wind", "Wood", "All"))
+                        "Nuclear", "Petroleum", "Solar", "Wind", "Wood"))
 colorBlindPalette <- c("Coal" = "#000000", "Geothermal" = "#E69F00",
                        "Hydro" = "#56B4E9", "Natural Gas" = "#0072B2",
                        "Nuclear" = "#CC79A7", "Petroleum" = "#D55E00",
@@ -48,12 +49,21 @@ ui <- fluidPage(
   #selectInput("State2", "Select a state to view data", allStatesAbb, selected = "US-TOTAL"),
   plotOutput("hist0"),
   plotOutput("hist1"),
+  checkboxInput('All', "All", value = TRUE),
   checkboxGroupInput("Energy", "Select an energy source", 
-                     energySources, selected = "All"),
-  plotOutput("hist2")
+                     energySources),
+  plotOutput("hist2"),
+  dataTableOutput("table1")
 )
 
-server <- function(input, output) {
+server <- function(input, output, session) {
+  observe({
+    updateCheckboxGroupInput(
+      session, "Energy", choices = energySources,
+      selected = if(input$All) energySources
+    )
+  })
+  
   #make the data reusable for multiple charts
   newGenerationReactive <- reactive({subset(newGenerations, newGenerations$STATE == input$State)})
   
@@ -73,12 +83,23 @@ server <- function(input, output) {
       geom_bar(position="fill", stat="identity") + scale_fill_manual(values = colorBlindPalette)
   })
   
+  #line chart with amount of each energy source per year
   output$hist2 <- renderPlot({
     newGeneration <- newGenerationReactive()
-    ggplot(subset(newGeneration, newGeneration$ENERGY.SOURCE != "Total"), 
+    ggplot(newGeneration[newGeneration$ENERGY.SOURCE %in% input$Energy,], 
            aes(x=YEAR, y=GENERATION..Megawatthours.,group=ENERGY.SOURCE, color=ENERGY.SOURCE)) +
-      stat_summary(fun = sum, geom = "line") + scale_color_manual(values = colorBlindPalette)
+      stat_summary(fun = sum, geom = "line", size=3) + scale_color_manual(values = colorBlindPalette)
   })
+  
+  #table outputs raw data. Need to adjust.
+  output$table1 <- DT::renderDataTable(
+    DT::datatable({
+      newGeneration <- newGenerationReactive()
+    },
+    options = list(searching = FALSE, pageLength = 5, lengthChange = FALSE),
+    rownames = FALSE
+    )
+  )
 }
 
 shinyApp(ui = ui, server = server)
