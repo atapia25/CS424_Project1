@@ -8,8 +8,12 @@ library(dplyr)
 years <- c(1990:2019)
 allStates <- sort(c(state.name, "Washington DC", "Total US"))
 allStatesAbb <- sort(c(state.abb, "DC", "US-TOTAL"))
+states <- setNames(as.list(c(state.abb, "DC", "US-TOTAL")), 
+                   c(state.name, "Washington DC", "Total US"))
+
 energySources <- sort(c("Coal", "Geothermal", "Hydro", "Natural Gas",
                         "Nuclear", "Petroleum", "Solar", "Wind", "Wood"))
+
 colorBlindPalette <- c("Coal" = "#000000", "Geothermal" = "#E69F00",
                        "Hydro" = "#56B4E9", "Natural Gas" = "#0072B2",
                        "Nuclear" = "#CC79A7", "Petroleum" = "#D55E00",
@@ -52,7 +56,7 @@ ui <- navbarPage("CS 424 Project One",
     fluidRow(
       column(1,
         selectInput("State", "Select a state to view data", 
-                    allStatesAbb, selected = "IL"),
+                    allStates, selected = "Illinois"),
         checkboxInput('All', "All", value = TRUE),
         checkboxGroupInput("Energy", "Select the energy sources to plot on line chart",
                            energySources)
@@ -73,7 +77,7 @@ ui <- navbarPage("CS 424 Project One",
       ),
       column(1,
         selectInput("State2", "Select a state to view data",
-                    allStatesAbb, selected = "US-TOTAL"),
+                    allStates, selected = "Total US"),
         checkboxInput('All2', "All", value = TRUE),
         checkboxGroupInput("Energy2", "Select the energy sources to plot on line chart",
                            energySources)
@@ -114,8 +118,8 @@ server <- function(input, output, session) {
   })
   
   #make the data reusable for multiple charts
-  newGenerationReactive <- reactive({subset(newGenerations, newGenerations$STATE == input$State)})
-  newGenerationReactive2 <- reactive({subset(newGenerations, newGenerations$STATE == input$State2)})
+  newGenerationReactive <- reactive({subset(newGenerations, newGenerations$STATE == states[[input$State]])})
+  newGenerationReactive2 <- reactive({subset(newGenerations, newGenerations$STATE == states[[input$State2]])})
   
   ### First half of the screen ###
   #stacked bar with total amount of each energy source
@@ -198,7 +202,7 @@ server <- function(input, output, session) {
   #line chart
   output$hist22 <- renderPlot({
     newGeneration <- newGenerationReactive2()
-    ggplot(newGeneration[newGeneration$ENERGY.SOURCE %in% input$Energy,], 
+    ggplot(newGeneration[newGeneration$ENERGY.SOURCE %in% input$Energy2,], 
            aes(x=YEAR, y=GENERATION..Megawatthours.,group=ENERGY.SOURCE, color=ENERGY.SOURCE)) +
       stat_summary(fun = sum, geom = "line", size=2) + 
       scale_color_manual(values = colorBlindPalette, name = "Energy Source") +
@@ -208,7 +212,7 @@ server <- function(input, output, session) {
   
   output$hist23 <- renderPlot({
     newGeneration <- newGenerationReactive2()
-    ggplot(newGeneration[newGeneration$ENERGY.SOURCE %in% input$Energy,],
+    ggplot(newGeneration[newGeneration$ENERGY.SOURCE %in% input$Energy2,],
            aes(x=YEAR, y=PERCENT,group=ENERGY.SOURCE, color=ENERGY.SOURCE)) +
       stat_summary(fun = sum, geom = "line", size=2) + 
       scale_color_manual(values = colorBlindPalette, name = "Energy Source") +
