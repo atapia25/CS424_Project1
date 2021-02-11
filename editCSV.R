@@ -43,12 +43,15 @@ newGenerations <- subset(generations, generations$GENERATION..Megawatthours. >= 
 #removes any unused factors such as "  " in STATE or "Other" in ENERGY.SOURCE
 newGenerations$STATE <- factor(newGenerations$STATE)
 newGenerations$ENERGY.SOURCE <- factor(newGenerations$ENERGY.SOURCE)
-newGenerations$GENERATION.Percent <- newGenerations$GENERATION..Megawatthours.
 
 #rename Energy Sources to something more compact
 levels(newGenerations$ENERGY.SOURCE)[levels(newGenerations$ENERGY.SOURCE)=="Wood and Wood Derived Fuels"] <- "Wood"
 levels(newGenerations$ENERGY.SOURCE)[levels(newGenerations$ENERGY.SOURCE)=="Hydroelectric Conventional"] <- "Hydro"
 levels(newGenerations$ENERGY.SOURCE)[levels(newGenerations$ENERGY.SOURCE)=="Solar Thermal and Photovoltaic"] <- "Solar"
+
+newGenerations <- 
+        group_by(newGenerations, YEAR, STATE) %>% 
+        mutate(PERCENT = GENERATION..Megawatthours./sum(GENERATION..Megawatthours.) * 100)
 
 AKData <- subset(newGenerations, newGenerations$STATE == "AK" & newGenerations$ENERGY.SOURCE != "Total")
 AKDataSmall <- subset(newGenerations, newGenerations$STATE == "AK" & newGenerations$ENERGY.SOURCE != "Total"
