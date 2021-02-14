@@ -22,7 +22,7 @@ colorBlindPalette <- c("Coal" = "#000000",
                        "Wood" = "#009E73") 
 
 generations <- read.csv("annual_generation_state.csv", header=TRUE, sep = ",")
-class(generations)
+#class(generations)
 generations$STATE <- toupper(generations$STATE)
 
 #transforming the megawatthours into nums instead of strings
@@ -39,7 +39,9 @@ newGenerations <- subset(generations, generations$GENERATION..Megawatthours. >= 
                            generations$ENERGY.SOURCE != "Other Gases" &
                            generations$ENERGY.SOURCE != "Other Biomass" &
                            generations$ENERGY.SOURCE != "Pumped Storage" &
-                           generations$STATE != "  ")
+                           generations$STATE != "  " &
+                           generations$TYPE.OF.PRODUCER == "Total Electric Power Industry" &
+                           generations$ENERGY.SOURCE != "Total")
 #removes any unused factors such as "  " in STATE or "Other" in ENERGY.SOURCE
 newGenerations$STATE <- factor(newGenerations$STATE)
 newGenerations$ENERGY.SOURCE <- factor(newGenerations$ENERGY.SOURCE)

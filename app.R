@@ -92,14 +92,43 @@ ui <- navbarPage("CS 424 Project One",
         selectInput("Year1", "Select a year to view",
                     years, selected = "All")
         ),
-      column(5,
-          plotOutput("hist10", inline = TRUE),
-          plotOutput("hist11", inline = TRUE),
-          plotOutput("hist12", inline = TRUE)
+      column(5, offset = 0,
+          #plotOutput("hist10", inline = TRUE),
+          #plotOutput("hist11", inline = TRUE),
+          #plotOutput("hist12", inline = TRUE),
+          #plotOutput("hist13", inline = TRUE)
+        fluidRow(
+          splitLayout(cellWidths = c("50%", "50%"), plotOutput("hist10"),
+                      plotOutput("hist11"))
+          ),
+        div(style = "margin-top:-12em", #to get rid of whitespace
+          fluidRow(
+            splitLayout(cellWidths = c("50%", "50%"), plotOutput("hist12"),
+                        plotOutput("hist13"))
+            )
+          ),
+        div(style = "margin-top:-10em",
+            fluidRow(
+             dataTableOutput("table1")
+            )
+          )
         ),
       column(5,
-        plotOutput("hist20", inline = TRUE),
-        plotOutput("hist21", inline = TRUE)
+         fluidRow(
+           splitLayout(cellWidths = c("50%", "50%"), plotOutput("hist20"),
+                       plotOutput("hist21"))
+         ),
+         div(style = "margin-top:-12em", #to get rid of whitespace
+             fluidRow(
+               splitLayout(cellWidths = c("50%", "50%"), plotOutput("hist22"),
+                           plotOutput("hist23"))
+             )
+         ),
+         div(style = "margin-top:-10em",
+             fluidRow(
+               dataTableOutput("table2")
+             )
+         )
       ),
       column(1,
         selectInput("State2", "Select a state to view data",
@@ -207,6 +236,10 @@ server <- function(input, output, session) {
     }
   })
   
+  newGenMapReactive <- reactive({
+    
+  })
+  
   ### showing summary of overall data for US ###
   #bar chart with total amount of energy
   output$histDefault0 <- renderPlot({
@@ -280,7 +313,16 @@ server <- function(input, output, session) {
     DT::datatable({
       newGeneration <- subset(newGenerations, newGenerations$STATE == "US-TOTAL")
     }),
-    options = list(searching = TRUE, pageLength = 6, lengthChange = FALSE),
+    options = list(searching = FALSE, pageLength = 5, lengthChange = FALSE,
+                   columns = list(
+                     list(title = 'Year'),
+                     list(title = 'State'),
+                     list(title = 'Producer'),
+                     list(title = 'Energy Source'),
+                     list(title = 'Generation (MWh)'),
+                     list(title = 'Percentage of Energy')
+                   )
+    ),
     rownames = FALSE
   )
   
@@ -299,10 +341,14 @@ server <- function(input, output, session) {
       xlab("Year") + ylab("Electricity Generation (MWh)") + 
       ggtitle(paste("Data from", input$State1)) + 
       theme(plot.title = element_text(hjust = 0.5, size = 15),
-            axis.title = element_text(size = 11, face = "bold")) +
+            axis.title = element_text(size = 11, face = "bold"),
+            legend.position = "bottom",
+            legend.title = element_text(size = 9),
+            legend.key.width = unit(0.5, "cm"),
+            legend.text = element_text(size = 7.5, face = "bold")) +
       scale_y_continuous(name="Electricity Generation (MWh)", 
                          labels = scales::comma)
-  }, height = 235, width = 650)
+  }, height = 245)
   
   #stacked bar with percent of total production for each energy source per year
   output$hist11 <- renderPlot({
@@ -311,11 +357,15 @@ server <- function(input, output, session) {
            aes(x=YEAR, y=PERCENT,fill=ENERGY.SOURCE)) + 
       geom_bar(position="stack", stat="identity", width = 0.7) + 
       scale_fill_manual(values = colorBlindPalette, name = "Energy Source") +
-      xlab("Year") + ylab("Electricity Generation Percentage (%)") + 
-      ggtitle(paste("Data from", input$State1)) + 
+      xlab("Year") + ylab("Energy Percentage (%)") + 
+      ggtitle(paste("Percentage of Energy Production in ", input$State1)) + 
       theme(plot.title = element_text(hjust = 0.5, size = 15),
-            axis.title.y = element_text(size = 11, face = "bold"))
-  }, height = 235, width = 650)
+            axis.title.y = element_text(size = 11, face = "bold"),
+            legend.position = "bottom",
+            legend.title = element_text(size = 9),
+            legend.key.width = unit(0.5, "cm"),
+            legend.text = element_text(size = 9, face = "bold"))
+  }, height = 245)
   
   #line chart with amount of each energy source per year
   output$hist12 <- renderPlot({
@@ -330,29 +380,51 @@ server <- function(input, output, session) {
                          labels = scales::comma) +
       ggtitle(paste("Data from", input$State1)) +
       theme(plot.title = element_text(hjust = 0.5, size = 15),
-            axis.title.y = element_text(size = 11, face = "bold"))
-  }, height = 235, width = 650)
+            axis.title = element_text(size = 11, face = "bold"),
+            legend.position = "bottom",
+            legend.title = element_text(size = 9),
+            legend.key.width = unit(0.5, "cm"),
+            legend.text = element_text(size = 7.5, face = "bold"))
+  }, height = 245, width = 390)
   
   output$hist13 <- renderPlot({
     newGeneration <- newGenerationReactive()
     ggplot(newGeneration,
            aes(x=YEAR, y=PERCENT, group=ENERGY.SOURCE, color=ENERGY.SOURCE)) +
-    stat_summary(fun = sum, geom = "line", size=2) + 
+    stat_summary(fun = sum, geom = "point", size=2) + 
+      geom_line(size = 1.25) +
       scale_color_manual(values = colorBlindPalette,name = "Energy Source") +
-      xlab("Year") + ylab("Electricity Generation Percentage (%)")
-  })
+      xlab("Year") + ylab("Energy Percentage (%)") +
+      ggtitle(paste("Percentage of Energy Production in ", input$State1)) +
+      theme(plot.title = element_text(hjust = 0.5, size = 15),
+            axis.title = element_text(size = 11, face = "bold"),
+            legend.position = "bottom",
+            legend.title = element_text(size = 9),
+            legend.key.width = unit(0.5, "cm"),
+            legend.text = element_text(size = 7.5, face = "bold"))
+  }, height = 245, width = 350)
   
   #table outputs raw data. Need to adjust.
   output$table1 <- DT::renderDataTable(
     DT::datatable({
       newGeneration <- newGenerationReactive()
     },
-    options = list(searching = TRUE, pageLength = 5, lengthChange = FALSE),
+    options = list(searching = FALSE, pageLength = 5, lengthChange = FALSE,
+                   columns = list(
+                     list(title = 'Year'),
+                     list(title = 'State'),
+                     list(title = 'Producer'),
+                     list(title = 'Energy Source'),
+                     list(title = 'Generation (MWh)'),
+                     list(title = 'Percentage of Energy')
+                   )
+                  ),
     rownames = FALSE
     )
   )
   
   ### the second half of the screen ###
+  #stacked bar chart with total energy amount
   output$hist20 <- renderPlot({
     newGeneration <- newGenerationReactive2()
     ggplot(newGeneration, 
@@ -362,44 +434,87 @@ server <- function(input, output, session) {
       xlab("Year") + ylab("Electricity Generation (MWh)") + 
       ggtitle(paste("Data from", input$State2)) + 
       theme(plot.title = element_text(hjust = 0.5, size = 15),
-            axis.title.y = element_text(size = 11, face = "bold")) +
+            axis.title = element_text(size = 11, face = "bold"),
+            axis.text.y = element_text(size = 9),
+            legend.position = "bottom",
+            legend.title = element_text(size = 9),
+            legend.key.width = unit(0.5, "cm"),
+            legend.text = element_text(size = 7.5, face = "bold")) +
       scale_y_continuous(name="Electricity Generation (MWh)", labels = scales::comma)
-  }, height = 250, width = 600)
+  }, height = 245)
   
+  # stacked bar chart with percentages
   output$hist21 <- renderPlot({
     newGeneration <- newGenerationReactive2()
     ggplot(newGeneration, 
            aes(x=YEAR, y=PERCENT,fill=ENERGY.SOURCE)) + 
       geom_bar(position="stack", stat="identity", width = 0.7) + 
       scale_fill_manual(values = colorBlindPalette, name = "Energy Source") +
-      xlab("Year") + ylab("Energy Generation Percentage (%)")
-  }, height = 250, width = 600)
+      xlab("Year") + ylab("Energy Percentage (%)") + 
+      ggtitle(paste("Data from", input$State2)) + 
+      theme(plot.title = element_text(hjust = 0.5, size = 15),
+            axis.title = element_text(size = 10, face = "bold"),
+            axis.text.y = element_text(size = 10),
+            legend.position = "bottom",
+            legend.title = element_text(size = 9),
+            legend.key.width = unit(0.5, "cm"),
+            legend.text = element_text(size = 7.5, face = "bold")) 
+  }, height = 245)
   
-  #line chart
+  #line chart with total amount
   output$hist22 <- renderPlot({
     newGeneration <- newGenerationReactive2()
-    ggplot(newGeneration[newGeneration$ENERGY.SOURCE %in% input$Energy2,], 
+    ggplot(newGeneration, 
            aes(x=YEAR, y=GENERATION..Megawatthours.,group=ENERGY.SOURCE, color=ENERGY.SOURCE)) +
-      stat_summary(fun = sum, geom = "line", size=2) + 
+      stat_summary(fun = sum, geom = "point", size=2) +
+      geom_line(size = 1.25) +
       scale_color_manual(values = colorBlindPalette, name = "Energy Source") +
       xlab("Year") + ylab("Electricity Generation (MWh)") + 
-      scale_y_continuous(name="Electricity Generation (MWh)", labels = scales::comma)
-  })
+      scale_y_continuous(name="Electricity Generation (MWh)", 
+                         labels = scales::comma) + 
+      ggtitle(paste("Data from", input$State2)) + 
+      theme(plot.title = element_text(hjust = 0.5, size = 15),
+            axis.title = element_text(size = 11, face = "bold"),
+            axis.text.y = element_text(size = 9),
+            legend.position = "bottom",
+            legend.title = element_text(size = 9),
+            legend.key.width = unit(0.5, "cm"),
+            legend.text = element_text(size = 7.5, face = "bold"))
+  }, height = 245)
   
+  #line chart with energy percentage
   output$hist23 <- renderPlot({
     newGeneration <- newGenerationReactive2()
-    ggplot(newGeneration[newGeneration$ENERGY.SOURCE %in% input$Energy2,],
+    ggplot(newGeneration,
            aes(x=YEAR, y=PERCENT,group=ENERGY.SOURCE, color=ENERGY.SOURCE)) +
-      stat_summary(fun = sum, geom = "line", size=2) + 
+      stat_summary(fun = sum, geom = "point", size=2) + 
+      geom_line(size = 1.25) +
       scale_color_manual(values = colorBlindPalette, name = "Energy Source") +
-      xlab("Year") + ylab("Energy Generation Percentage (%)")
-  })
+      xlab("Year") + ylab("Energy Percentage (%)") + 
+      ggtitle(paste("Data from", input$State2)) + 
+      theme(plot.title = element_text(hjust = 0.5, size = 15),
+            axis.title = element_text(size = 11, face = "bold"),
+            axis.text.y = element_text(size = 9),
+            legend.position = "bottom",
+            legend.title = element_text(size = 9),
+            legend.key.width = unit(0.5, "cm"),
+            legend.text = element_text(size = 7.5, face = "bold"))
+  }, height = 245)
   
   output$table2 <- DT::renderDataTable(
     DT::datatable({
       newGeneration <- newGenerationReactive2()
     },
-    options = list(searching = TRUE, pageLength = 5, lengthChange = FALSE),
+    options = list(searching = FALSE, pageLength = 5, lengthChange = FALSE,
+                   columns = list(
+                     list(title = 'Year'),
+                     list(title = 'State'),
+                     list(title = 'Producer'),
+                     list(title = 'Energy Source'),
+                     list(title = 'Generation (MWh)'),
+                     list(title = 'Percentage of Energy')
+                   )
+    ),
     rownames = FALSE
     )
   )
