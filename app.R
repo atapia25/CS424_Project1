@@ -55,6 +55,11 @@ newGenerations <- group_by(newGenerations, YEAR, STATE) %>%
   mutate(PERCENT = GENERATION..Megawatthours./sum(GENERATION..Megawatthours.) * 100)
 newGenerations$PERCENT <- round(newGenerations$PERCENT, digit = 2)
 
+#For heat map, which I could not get working, unfortunately
+newGenHeatMap <- subset(newGenerations, newGenerations$STATE != "DC")
+newGenHeatMap <- newGenHeatMap %>%
+  rename(state = STATE)
+
 ui <- navbarPage("CS 424 Project One",
   navbarMenu("Summary of US Data",
     tabPanel("Bar Charts",
@@ -93,10 +98,6 @@ ui <- navbarPage("CS 424 Project One",
                     years, selected = "All")
         ),
       column(5, offset = 0,
-          #plotOutput("hist10", inline = TRUE),
-          #plotOutput("hist11", inline = TRUE),
-          #plotOutput("hist12", inline = TRUE),
-          #plotOutput("hist13", inline = TRUE)
         fluidRow(
           splitLayout(cellWidths = c("50%", "50%"), plotOutput("hist10"),
                       plotOutput("hist11"))
@@ -234,10 +235,6 @@ server <- function(input, output, session) {
              & newGenerations$STATE == states[[input$State2]] &
                newGenerations$YEAR == input$Year2)
     }
-  })
-  
-  newGenMapReactive <- reactive({
-    
   })
   
   ### showing summary of overall data for US ###
